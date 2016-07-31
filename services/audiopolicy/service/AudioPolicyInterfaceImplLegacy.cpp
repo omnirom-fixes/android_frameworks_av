@@ -158,13 +158,27 @@ status_t AudioPolicyService::startOutput(audio_io_handle_t output,
         return NO_INIT;
     }
     ALOGV("startOutput()");
-    // create audio processors according to stream
+    return mOutputCommandThread->startOutputCommand(output, stream, session);
+}
+
+status_t AudioPolicyService::doStartOutput(audio_io_handle_t output,
+                                           audio_stream_type_t stream,
+                                           audio_session_t session)
+{
+    if (uint32_t(stream) >= AUDIO_STREAM_CNT) {
+        return BAD_VALUE;
+    }
+    if (mpAudioPolicy == NULL) {
+        return NO_INIT;
+    }
+    ALOGV("doStartOutput()");
     sp<AudioPolicyEffects>audioPolicyEffects;
     {
         Mutex::Autolock _l(mLock);
         audioPolicyEffects = mAudioPolicyEffects;
     }
     if (audioPolicyEffects != 0) {
+        // create audio processors according to stream
         status_t status = audioPolicyEffects->addOutputSessionEffects(output, stream, session);
         if (status != NO_ERROR && status != ALREADY_EXISTS) {
             ALOGW("Failed to add effects on session %d", session);
@@ -260,6 +274,15 @@ status_t AudioPolicyService::getInputForAttr(const audio_attributes_t *attr,
     if ((inputSource == AUDIO_SOURCE_HOTWORD) && !captureHotwordAllowed()) {
         return BAD_VALUE;
     }
+
+    if ((inputSource == AUDIO_SOURCE_FM_TUNER) && !accessFmRadioAllowed()) {
+        return BAD_VALUE;
+    }
+
+#ifdef HAVE_PRE_KITKAT_AUDIO_POLICY_BLOB
+    if (inputSource == AUDIO_SOURCE_HOTWORD)
+        inputSource = AUDIO_SOURCE_VOICE_RECOGNITION;
+#endif
 
     sp<AudioPolicyEffects>audioPolicyEffects;
     {
@@ -510,6 +533,9 @@ status_t AudioPolicyService::queryDefaultPreProcessing(int audioSession,
 
 bool AudioPolicyService::isOffloadSupported(const audio_offload_info_t& info)
 {
+#ifdef HAVE_PRE_KITKAT_AUDIO_POLICY_BLOB
+    return false;
+#else
     if (mpAudioPolicy == NULL) {
         ALOGV("mpAudioPolicy == NULL");
         return false;
@@ -521,6 +547,7 @@ bool AudioPolicyService::isOffloadSupported(const audio_offload_info_t& info)
     }
 
     return mpAudioPolicy->is_offload_supported(mpAudioPolicy, &info);
+#endif
 }
 
 status_t AudioPolicyService::listAudioPorts(audio_port_role_t role __unused,
@@ -619,4 +646,9 @@ status_t AudioPolicyService::stopAudioSource(audio_io_handle_t handle)
     return INVALID_OPERATION;
 }
 
+status_t AudioPolicyService::listAudioSessions(audio_stream_type_t streams,
+                                  Vector< sp<AudioSessionInfo>> &sessions)
+{
+    return INVALID_OPERATION;
+}
 }; // namespace android

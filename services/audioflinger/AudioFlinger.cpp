@@ -110,6 +110,7 @@
 #ifdef DOLBY_ENABLE
 #include "EffectDapController_impl.h"
 #endif // DOLBY_END
+
 namespace android {
 
 static const char kDeadlockedString[] = "AudioFlinger may be deadlocked\n";

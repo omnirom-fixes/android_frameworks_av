@@ -985,7 +985,7 @@ audio_io_handle_t AudioPolicyManager::getOutputForDevice(
             }
 #else // DOLBY_END
             mpClientInterface->moveEffects(AUDIO_SESSION_OUTPUT_MIX, srcOutput, dstOutput);
-#endif // LINE_ADDED_BY_DOLBY
+#endif
         }
         mPreviousOutputs = mOutputs;
         ALOGV("getOutput() returns new direct output %d", output);
@@ -1138,7 +1138,6 @@ status_t AudioPolicyManager::startOutput(audio_io_handle_t output,
     //       music playing on the deep-buffered output.
     mDolbyAudioPolicy.movedToOutput(stream, outputDesc, &mOutputs, mpClientInterface, output);
 #endif //DOLBY_END
-
     return status;
 }
 
