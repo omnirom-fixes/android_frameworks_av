@@ -25,6 +25,7 @@ LOCAL_C_INCLUDES := \
 	$(TOP)/frameworks/av-caf/media/libmediaplayerservice              \
 	$(TOP)/frameworks/native-caf/include/media/openmax                \
         $(TOP)/frameworks/av-caf/media/libavextensions                    \
+        $(TOP)/frameworks/av-caf/include/media                            \
 
 LOCAL_CFLAGS += -Werror -Wall
 

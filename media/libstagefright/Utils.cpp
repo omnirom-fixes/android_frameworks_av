@@ -55,6 +55,7 @@
 #include <media/AudioParameter.h>
 
 #include <stagefright/AVExtensions.h>
+#include <media/stagefright/FFMPEGSoftCodec.h>
 
 namespace android {
 
@@ -125,7 +126,7 @@ status_t convertMetaDataToMessage(
 
     int avgBitRate;
     if (meta->findInt32(kKeyBitRate, &avgBitRate)) {
-        msg->setInt32("bit-rate", avgBitRate);
+        msg->setInt32("bitrate", avgBitRate);
     }
 
     int32_t isSync;
@@ -222,6 +223,11 @@ status_t convertMetaDataToMessage(
     int32_t fps;
     if (meta->findInt32(kKeyFrameRate, &fps) && fps > 0) {
         msg->setInt32("frame-rate", fps);
+    }
+
+    int32_t bitsPerSample;
+    if (meta->findInt32(kKeyBitsPerSample, &bitsPerSample)) {
+        msg->setInt32("bit-width", bitsPerSample);
     }
 
     uint32_t type;
@@ -329,10 +335,8 @@ status_t convertMetaDataToMessage(
     } else if (meta->findData(kKeyHVCC, &type, &data, &size)) {
         const uint8_t *ptr = (const uint8_t *)data;
 
-        if (size < 23 || ptr[0] > 1) {  // configurationVersion == 1
-            ALOGE("b/23680780");
-            return BAD_VALUE;
-        }
+        CHECK(size >= 7);
+        //CHECK_EQ((unsigned)ptr[0], 1u);  // configurationVersion == 1
         uint8_t profile __unused = ptr[1] & 31;
         uint8_t level __unused = ptr[12];
         ptr += 22;
@@ -475,7 +479,13 @@ status_t convertMetaDataToMessage(
     }
 
     AVUtils::get()->convertMetaDataToMessage(meta, &msg);
+
+    FFMPEGSoftCodec::convertMetaDataToMessageFF(meta, &msg); 
     *format = msg;
+
+    ALOGI("convertMetaDataToMessage from:");
+    meta->dumpToLog();
+    ALOGI("  to: %s", msg->debugString(0).c_str());
 
     return OK;
 }
@@ -668,6 +678,10 @@ void convertMessageToMetaData(const sp<AMessage> &msg, sp<MetaData> &meta) {
         if (msg->findInt32("is-adts", &isADTS)) {
             meta->setInt32(kKeyIsADTS, isADTS);
         }
+        int32_t bitsPerSample;
+        if (msg->findInt32("bit-width", &bitsPerSample)) {
+            meta->setInt32(kKeyBitsPerSample, bitsPerSample);
+        }
     }
 
     int32_t maxInputSize;
@@ -719,10 +733,10 @@ void convertMessageToMetaData(const sp<AMessage> &msg, sp<MetaData> &meta) {
 
     // XXX TODO add whatever other keys there are
 
-#if 0
-    ALOGI("converted %s to:", msg->debugString(0).c_str());
+    FFMPEGSoftCodec::convertMessageToMetaDataFF(msg, meta);
+
+    ALOGI("convertMessageToMetaData from %s to:", msg->debugString(0).c_str());
     meta->dumpToLog();
-#endif
 }
 
 AString MakeUserAgent() {
@@ -873,6 +887,8 @@ bool canOffloadStream(const sp<MetaData>& meta, bool hasVideo,
     if (AVUtils::get()->canOffloadAPE(meta) != true) {
         return false;
     }
+
+    ALOGV("Mime type \"%s\" mapped to audio_format %d", mime, info.format); 
 
     // Redefine aac format according to its profile
     // Offloading depends on audio DSP capabilities.
