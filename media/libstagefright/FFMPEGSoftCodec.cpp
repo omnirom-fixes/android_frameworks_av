@@ -229,7 +229,6 @@ const char* FFMPEGSoftCodec::overrideComponentName(
             if (!strncasecmp(mime, MEDIA_MIMETYPE_AUDIO_AAC, strlen(MEDIA_MIMETYPE_AUDIO_AAC))) {
                 componentName = "OMX.ffmpeg.aac.decoder";
                 ALOGD("Use FFMPEG for high-res AAC format");
-strlen(MEDIA_MIMETYPE_VIDEO_WMV)) &&
             } else if (!strncasecmp(mime, MEDIA_MIMETYPE_AUDIO_FLAC, strlen(MEDIA_MIMETYPE_AUDIO_FLAC))) {
                 componentName = "OMX.ffmpeg.flac.decoder";
                 ALOGD("Use FFMPEG for high-res FLAC format");
@@ -237,12 +236,11 @@ strlen(MEDIA_MIMETYPE_VIDEO_WMV)) &&
         }
     }
 
-    return componentName; 
+    return componentName;
 }
 
 void FFMPEGSoftCodec::overrideComponentName(
         uint32_t quirks, const sp<AMessage> &msg, AString* componentName, AString* mime, int32_t isEncoder) {
- strlen(MEDIA_MIMETYPE_AUDIO_AAC)) &&
 
     sp<MetaData> meta = new MetaData;
     convertMessageToMetaData(msg, meta);
@@ -254,7 +252,7 @@ void FFMPEGSoftCodec::overrideComponentName(
 }
 
 status_t FFMPEGSoftCodec::setVideoFormat(
-        status_t status, 
+        status_t status,
         const sp<AMessage> &msg, const char* mime, sp<IOMX> OMXhandle,
         IOMX::node_id nodeID, bool isEncoder,
         OMX_VIDEO_CODINGTYPE *compressionFormat,
@@ -274,10 +272,17 @@ status_t FFMPEGSoftCodec::setVideoFormat(
             if (strncmp(componentName, "OMX.ffmpeg.", 11) == 0) {
                 err = setWMVFormat(msg, OMXhandle, nodeID);
                 if (err != OK) {
+                    ALOGE("setWMVFormat() failed (err = %d)", err);
+                }
+            }
+            *compressionFormat = OMX_VIDEO_CodingWMV;
+        } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_RV, mime)) {
+            err = setRVFormat(msg, OMXhandle, nodeID);
+            if (err != OK) {
                 ALOGE("setRVFormat() failed (err = %d)", err);
             } else {
                 *compressionFormat = OMX_VIDEO_CodingRV;
-                }
+            }
         } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_VC1, mime)) {
             *compressionFormat = (OMX_VIDEO_CODINGTYPE)OMX_VIDEO_CodingVC1;
         } else if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_FLV1, mime)) {
@@ -298,8 +303,9 @@ status_t FFMPEGSoftCodec::setVideoFormat(
                 ALOGE("setFFmpegVideoFormat() failed (err = %d)", err);
             } else {
                 *compressionFormat = OMX_VIDEO_CodingAutoDetect;
+            }
         } else {
-            err = BAD_TYPE; 
+            err = BAD_TYPE;
         }
     }
 
@@ -312,9 +318,10 @@ status_t FFMPEGSoftCodec::setVideoFormat(
         || !strncmp(componentName, "OMX.ittiam.", 11))) {
         status_t xerr = OK;
 
+
         int32_t mode = 0;
         OMX_QCOM_PARAM_PORTDEFINITIONTYPE portFmt;
-        InitOMXParams(&portFmt); 
+        InitOMXParams(&portFmt);
         portFmt.nPortIndex = kPortIndexInput;
 
         if (msg->findInt32("use-arbitrary-mode", &mode) && mode) {
@@ -346,10 +353,11 @@ status_t FFMPEGSoftCodec::setVideoFormat(
         if (msg->findString("file-format", &container)) {
             containerStr = container.c_str();
         }
+
         bool tsReorder = false;
         const char* roleVC1 = "OMX.qcom.video.decoder.vc1";
         const char* roleMPEG4 = "OMX.qcom.video.decoder.mpeg4";
-        const char* roleHEVC = "OMX.qcom.video.decoder.hevc"; 
+        const char* roleHEVC = "OMX.qcom.video.decoder.hevc";
         if (!strncmp(componentName, roleVC1, strlen(roleVC1)) ||
                 !strncmp(componentName, roleMPEG4, strlen(roleMPEG4))) {
             // The codec requires timestamp reordering
@@ -425,7 +433,6 @@ status_t FFMPEGSoftCodec::setVideoFormat(
             }
         }
     }
-
     return err;
 }
 
@@ -452,7 +459,7 @@ status_t FFMPEGSoftCodec::setQCDIVXFormat(
             DivxVersion = kTypeDivXVer_3_11;
             v = "3.11";
         }
-        ALOGW("Divx version key missing, initializing the version to %s", v); 
+        ALOGW("Divx version key missing, initializing the version to %s", v);
     }
     ALOGV("Divx Version Type %d", DivxVersion);
 
@@ -1361,3 +1368,4 @@ status_t FFMPEGSoftCodec::setFFmpegAudioFormat(
 }
 
 }
+
