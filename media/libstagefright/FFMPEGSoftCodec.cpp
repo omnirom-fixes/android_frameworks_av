@@ -41,9 +41,7 @@
 
 #include <OMX_FFMPEG_Extn.h>
 
-#ifdef QCOM_HARDWARE
 #include <OMX_QCOMExtns.h>
-#endif
 
 namespace android {
 
@@ -269,7 +267,6 @@ status_t FFMPEGSoftCodec::setVideoFormat(
         err = BAD_TYPE;
     }
 
-#ifdef QCOM_HARDWARE
     // We need to do a few extra steps if FFMPEGExtractor is in control
     // and we want to talk to the hardware codecs. This logic is taken
     // from the CAF L release. It was unfortunately moved to a proprietary
@@ -351,7 +348,6 @@ status_t FFMPEGSoftCodec::setVideoFormat(
             }
         }
     }
-#endif
 
     return err;
 }
@@ -360,7 +356,6 @@ status_t FFMPEGSoftCodec::setQCDIVXFormat(
         const sp<AMessage> &msg, const char* mime, sp<IOMX> OMXhandle,
         IOMX::node_id nodeID, int port_index) {
     status_t err = OK;
-#ifdef QCOM_HARDWARE
     if (!strcasecmp(MEDIA_MIMETYPE_VIDEO_DIVX, mime) ||
         !strcasecmp(MEDIA_MIMETYPE_VIDEO_DIVX4, mime) ||
         !strcasecmp(MEDIA_MIMETYPE_VIDEO_DIVX311, mime)) {
@@ -392,7 +387,6 @@ status_t FFMPEGSoftCodec::setQCDIVXFormat(
                          (OMX_INDEXTYPE)OMX_QcomIndexParamVideoDivx,
                          &paramDivX, sizeof(paramDivX));
     }
-#endif
     return err;
 }
 
