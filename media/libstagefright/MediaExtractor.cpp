@@ -59,15 +59,10 @@ sp<MediaExtractor> MediaExtractor::Create(
         const sp<DataSource> &source, const char *mime,
         const uint32_t flags) {
     sp<AMessage> meta;
-    bool secondPass = false; 
 
     String8 tmp;
-retry:
-    if (secondPass || mime == NULL) {
+    if (mime == NULL) {
         float confidence;
-        if (secondPass) {
-            confidence = 3.14f;
-        }
         if (!source->sniff(&tmp, &confidence, &meta)) {
             ALOGV("FAILED to autodetect media content.");
 
@@ -101,9 +96,10 @@ retry:
         }
     }
 
-    sp<MediaExtractor> ret = NULL;
+    sp<MediaExtractor> ret;
     AString extractorName; 
     if ((ret = AVFactory::get()->createExtendedExtractor(source, mime, meta, flags)) != NULL) {
+        ALOGI("Using extended extractor"); 
     } else if (meta.get() && meta->findString("extended-extractor-use", &extractorName)
             && sPlugin.create) {
         ALOGI("Use extended extractor for the special mime(%s) or codec", mime);
@@ -146,15 +142,6 @@ retry:
        } else {
            ret->setDrmFlag(false);
        }
-    }
-
-    if (ret != NULL) {
-
-        if (!secondPass && ( ret->countTracks() == 0 ||
-                    (!strncasecmp("video/", mime, 6) && ret->countTracks() < 2) ) ) {
-            secondPass = true;
-            goto retry;
-        }
     }
 
     return ret;
