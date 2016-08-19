@@ -1578,7 +1578,9 @@ status_t StagefrightRecorder::setupVideoEncoder(
         }
     }
 
+    if (cameraSource != NULL) {
     setupCustomVideoEncoderParams(cameraSource, format);
+    }
 
     format->setInt32("bitrate", mVideoBitRate);
     format->setInt32("frame-rate", mFrameRate);
